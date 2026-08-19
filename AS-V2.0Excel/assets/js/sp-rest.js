@@ -53,6 +53,115 @@ window.CH = window.CH || {};
     return String(value).replace(/'/g, "''");
   }
 
+  // ---------- Demo mode (no SharePoint context on this page) ----------
+  //
+  // _spPageContextInfo is a global SharePoint stamps onto every page it actually serves - the
+  // same signal config.js already relies on. Its absence means this file is running somewhere
+  // SharePoint never touched: localhost, a GitHub Pages/raw.githack preview, a plain file://
+  // open. Rather than let every read/write fail with "Couldn't reach SharePoint" there, demo
+  // mode swaps in a small in-memory store seeded with sample rows, so the app has something to
+  // show and its create/edit/delete flows still work for the length of the tab. None of this
+  // runs, or is even reachable, once the page is actually hosted by SharePoint.
+  const DEMO_MODE = typeof _spPageContextInfo === "undefined";
+
+  if (DEMO_MODE) {
+    console.info("[CH] No SharePoint context detected - using sample data instead of live lists.");
+  }
+
+  let demoStore = null;
+  let demoIdCounter = 1000;
+
+  function nextDemoId() {
+    demoIdCounter += 1;
+    return demoIdCounter;
+  }
+
+  function seedDemoItems(rows) {
+    const now = new Date().toISOString();
+    return rows.map((fields) => ({ Id: nextDemoId(), Modified: now, CHCreatedAt: now, CHUpdatedAt: now, ...fields }));
+  }
+
+  function buildDemoStore() {
+    const lists = CH.config.lists;
+    const now = new Date().toISOString();
+    return {
+      [lists.categories]: seedDemoItems([
+        { CHCategoryID: "cat-001", Title: "Announcements", CHDescription: "Official updates from campus administration.", CHImageRef: "", CHIcon: "📢" },
+        { CHCategoryID: "cat-002", Title: "Events", CHDescription: "Upcoming activities and campus events.", CHImageRef: "", CHIcon: "🎉" },
+        { CHCategoryID: "cat-003", Title: "Facilities", CHDescription: "Maintenance notices and facility updates.", CHImageRef: "", CHIcon: "🏢" },
+      ]),
+      [lists.posts]: seedDemoItems([
+        { CHPostID: "post-001", CHCategoryID: "cat-001", Title: "Fall Semester Registration Opens", CHShortDescription: "Registration begins Monday for all returning students.", CHFullDescription: "Registration for the fall semester opens Monday at 8:00 AM. Make sure your account is in good standing before you register.", CHImageRef: "", CHPostDate: now, CHCreatedByRole: "Admin", CHAssignedToSupervisor: "false" },
+        { CHPostID: "post-002", CHCategoryID: "cat-002", Title: "Annual Sports Day", CHShortDescription: "Join us for a full day of sports and activities.", CHFullDescription: "The Annual Sports Day will be held on the main field, featuring team sports, prizes, and food trucks.", CHImageRef: "", CHPostDate: now, CHCreatedByRole: "Admin", CHAssignedToSupervisor: "true" },
+        { CHPostID: "post-003", CHCategoryID: "cat-003", Title: "Elevator Maintenance in Building C", CHShortDescription: "Elevators will be offline for scheduled maintenance.", CHFullDescription: "Building C's elevators will be under maintenance this weekend. Please use the stairs or the Building D elevators.", CHImageRef: "", CHPostDate: now, CHCreatedByRole: "Supervisor", CHAssignedToSupervisor: "false" },
+      ]),
+      [lists.heroSlides]: seedDemoItems([
+        { CHSliderID: "slide-001", Title: "Welcome Back!", CHDescription: "A new semester starts now.", CHImageRef: "", CHLinkedPostID: "", CHDisplayOrder: 1, CHIsActive: "true" },
+        { CHSliderID: "slide-002", Title: "Sports Day is Coming", CHDescription: "Don't miss the Annual Sports Day.", CHImageRef: "", CHLinkedPostID: "post-002", CHDisplayOrder: 2, CHIsActive: "true" },
+      ]),
+    };
+  }
+
+  function ensureDemoStore() {
+    if (!demoStore) demoStore = buildDemoStore();
+    return demoStore;
+  }
+
+  /** SharePoint doubles a literal quote inside getbytitle('...') - undo that to get the real title. */
+  function listTitleFromPath(path) {
+    const match = path.match(/getbytitle\('([^']+)'\)/);
+    return match ? match[1].replace(/''/g, "'") : null;
+  }
+
+  function demoRead(path) {
+    const store = ensureDemoStore();
+    if (path.includes("ListItemEntityTypeFullName")) {
+      return { ListItemEntityTypeFullName: "SP.Data.DemoListItem" };
+    }
+    const title = listTitleFromPath(path);
+    return { value: title && store[title] ? store[title].map((item) => ({ ...item })) : [] };
+  }
+
+  function demoWrite(path, { body, httpMethod, rawBody } = {}) {
+    const store = ensureDemoStore();
+
+    // Image upload/delete go through the file APIs, not a list - an object URL makes an uploaded
+    // picture preview correctly for the rest of the session, with nothing real to store it in.
+    if (rawBody && path.includes("/Files/add(")) {
+      return { d: { ServerRelativeUrl: URL.createObjectURL(rawBody) } };
+    }
+    if (path.includes("GetFileByServerRelativeUrl")) {
+      return null;
+    }
+
+    const single = path.match(/getbytitle\('([^']+)'\)\/items\((\d+)\)/);
+    if (single) {
+      const title = single[1].replace(/''/g, "'");
+      const id = Number(single[2]);
+      const items = store[title] || [];
+      const index = items.findIndex((item) => item.Id === id);
+      if (index === -1) return null;
+      if (httpMethod === "DELETE") {
+        items.splice(index, 1);
+        return null;
+      }
+      const { __metadata, ...fields } = body || {};
+      Object.assign(items[index], fields, { Modified: new Date().toISOString() });
+      return null;
+    }
+
+    const title = listTitleFromPath(path);
+    if (title) {
+      if (!store[title]) store[title] = [];
+      const { __metadata, ...fields } = body || {};
+      const id = nextDemoId();
+      store[title].push({ Id: id, Modified: new Date().toISOString(), ...fields });
+      return { d: { Id: id } };
+    }
+
+    return null;
+  }
+
   /**
    * jQuery reports a failure as (jqXHR, textStatus, errorThrown), with the useful sentence
    * buried in the response body - and SharePoint writes that sentence in two different shapes
@@ -146,6 +255,7 @@ window.CH = window.CH || {};
   // ---------- Requests ----------
 
   async function read(path) {
+    if (DEMO_MODE) return demoRead(path);
     for (let attempt = 0; ; attempt += 1) {
       try {
         const { text } = await ajax({
@@ -195,6 +305,7 @@ window.CH = window.CH || {};
    * Both are sent as POSTs, which is how the SharePoint REST API expects them.
    */
   async function write(path, { body, httpMethod, rawBody = null, contentType } = {}) {
+    if (DEMO_MODE) return demoWrite(path, { body, httpMethod, rawBody });
     for (let attempt = 0; ; attempt += 1) {
       const digest = await getDigest(attempt > 0);
       const headers = { Accept: "application/json;odata=verbose", "X-RequestDigest": digest };

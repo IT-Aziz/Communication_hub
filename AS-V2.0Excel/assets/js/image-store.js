@@ -69,7 +69,9 @@ window.CH = window.CH || {};
   function resolve(ref) {
     if (!ref) return "";
     const value = String(ref).trim();
-    if (/^https?:\/\//i.test(value) || value.startsWith("/")) return value;
+    // blob: shows up only in demo mode (assets/js/sp-rest.js), for an image that was "uploaded"
+    // with no real SharePoint to store it - already a usable <img src> on its own, like https:.
+    if (/^(https?:|blob:)/i.test(value) || value.startsWith("/")) return value;
     return `${libraryPath()}/${value}`; // a bare file name typed by an admin
   }
 
