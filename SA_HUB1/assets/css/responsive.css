@@ -1,0 +1,110 @@
+/* =========================================================================
+   Tablet
+   ========================================================================= */
+@media (max-width: 900px) {
+  .category-grid,
+  .post-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* =========================================================================
+   Mobile
+   ========================================================================= */
+@media (max-width: 600px) {
+  .container {
+    padding: var(--spacing-medium);
+  }
+
+  .category-grid,
+  .post-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .slide-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .slide-row__actions {
+    justify-content: space-between;
+  }
+
+  .admin-toolbar .btn {
+    width: 100%;
+  }
+
+  .navbar {
+    padding: 0 var(--spacing-medium);
+  }
+
+  .navbar__links {
+    display: none;
+    position: absolute;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: var(--spacing-small);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-medium);
+  }
+
+  .navbar__links--open {
+    display: flex;
+  }
+
+  .navbar__link {
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar__toggle {
+    display: flex;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header .btn {
+    width: 100%;
+  }
+
+  .modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal__footer .btn {
+    width: 100%;
+  }
+
+  .modal__body {
+    max-height: 75vh;
+  }
+
+  .toast-region {
+    left: var(--spacing-medium);
+    right: var(--spacing-medium);
+    bottom: var(--spacing-medium);
+  }
+
+  .toast {
+    width: 100%;
+  }
+}

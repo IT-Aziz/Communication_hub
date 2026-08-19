@@ -1,0 +1,20 @@
+[
+  {
+    "CategoryID": "cat-4a04455a",
+    "CategoryName": "HR",
+    "Description": "Description",
+    "Image": "",
+    "Icon": "users",
+    "CreatedAt": "2026-08-11T06:48:56.959Z",
+    "UpdatedAt": "2026-08-11T06:48:56.959Z"
+  },
+  {
+    "CategoryID": "cat-acbe6433",
+    "CategoryName": "Safety",
+    "Description": "x",
+    "Image": "",
+    "Icon": "heart",
+    "CreatedAt": "2026-08-11T06:54:06.336Z",
+    "UpdatedAt": "2026-08-11T06:54:06.336Z"
+  }
+]
