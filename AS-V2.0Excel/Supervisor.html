@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisor - CommunicationHub</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <header class="navbar">
+    <a class="navbar__brand" href="Userpage.html">
+      CommunicationHub
+    </a>
+    <nav class="navbar__links" id="navLinks" data-nav-links aria-label="Primary">
+      <a class="navbar__link" data-nav-link href="Userpage.html">Home</a>
+      <a class="navbar__link" data-nav-link href="Supervisor.html">Supervisor</a>
+      <a class="navbar__link" data-nav-link href="adminpage.html">Admin</a>
+    </nav>
+    <button
+      type="button"
+      class="navbar__toggle"
+      data-nav-toggle
+      aria-label="Toggle menu"
+      aria-expanded="false"
+      aria-controls="navLinks"
+    >&#9776;</button>
+  </header>
+
+  <div id="appStatus" class="connection-gate" role="status" hidden>
+    <p data-status-message class="connection-gate__message"></p>
+  </div>
+
+  <div id="syncBar" class="sync-bar" hidden>
+    <span data-sync-status class="sync-bar__status"></span>
+    <button type="button" class="btn btn--secondary btn--small" data-refresh-now>Refresh</button>
+  </div>
+
+  <main class="container">
+    <div id="supervisorLoadingState" class="loading-state">
+      <span class="spinner" aria-hidden="true"></span><span>Loading your assigned post…</span>
+    </div>
+
+    <p id="supervisorEmptyState" class="empty-state" hidden>No post has been assigned to you yet. Ask an admin to assign one.</p>
+
+    <article id="supervisorPostContent" class="post-detail" hidden></article>
+  </main>
+
+  <script src="./assets/js/vendor/jquery.min.js"></script>
+  <script src="./assets/js/utils.js"></script>
+  <script src="./assets/js/config.js"></script>
+  <script src="./assets/js/sp-rest.js"></script>
+  <script src="./assets/js/image-store.js"></script>
+  <script src="./assets/js/sp-data.js"></script>
+  <script src="./assets/js/category-service.js"></script>
+  <script src="./assets/js/post-service.js"></script>
+  <script src="./assets/js/navigation.js"></script>
+  <script src="./assets/js/supervisor-page.js"></script>
+  <script src="./assets/js/sync.js"></script>
+</body>
+</html>
